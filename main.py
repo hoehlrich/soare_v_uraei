@@ -84,12 +84,13 @@ class WordleWord():
     '''WordleWord Class'''
 
     words = []
+    word_list = None
 
     def __init__(self, word):
         self.word = word
         WordleWord.words.append(self)
     
-    def calculate_score(self):
+    def calculate_letter_score(self):
         score = 0
         
         for i, letter in enumerate(self.word):
@@ -97,24 +98,57 @@ class WordleWord():
             score += letter_obj.frequencies['total']
             score += letter_obj.frequencies[str(i)]
         
-        self.score = score
+        self.letter_score = score
 
         return score
 
+    @classmethod
+    def set_word_list(cls, word_list):
+        cls.word_list = word_list
+
+    @classmethod
+    def generate_word_data(cls, output_path=None):
+        if len(cls.words):
+            wordle_words = {}
+            for word in cls.word_list:
+                wordle_word = cls(word)
+                wordle_word.calculate_letter_score()
+                wordle_words[word] = wordle_word
+            
+            cls.sort_words()
+
+            try:
+                write_data(output_path, {word.word: word.letter_score for word in cls.words}) # Write to file
+            except TypeError:
+                pass
+
+    @classmethod
+    def sort_words(cls):
+        cls.words = [(word, word.letter_score) for word in cls.words] # Change cls.words to a tupled format in the form of (word_obj, letter_score)
+        cls.words.sort(key=lambda x: x[1], reverse=True) # Sort the tuples by the second item (letter_score) reversely (greatest to least)
+        cls.words = [word[0] for word in cls.words] # Change cls.words back to an object format
+                
+
 def main():
-    WordleLetter.set_answers_list(load_asset('Assets/answers.json')['data']) # Set answers list for letters
+    WordleLetter.set_answers_list(load_asset('Assets/answers.json')['data']) # Sets letter list to letters
     
     # WordleLetter.generate_letter_data('Assets/letter_data.json') # Generate letter data
 
     WordleLetter.load_letter_data('Assets/letter_data.json') # Load letter data
 
     soare = WordleWord('soare')
-    soare.calculate_score()
-    print(soare.score)
+    soare.calculate_letter_score()
+    print(f'Soare letter score: {soare.letter_score}')
 
     uraei = WordleWord('uraei')
-    uraei.calculate_score()
-    print(uraei.score)
+    uraei.calculate_letter_score()
+    print(f'Uraei letter score: {uraei.letter_score}')
+
+    WordleWord.set_word_list(load_asset('Assets/words.json')['data']) # Sets word list to words
+
+    WordleWord.generate_word_data('Assets/word_data.json')
+
+
 
 if __name__ == '__main__':
     main()
